@@ -1,5 +1,6 @@
 import type {
   Match3Config,
+  Match3Hint,
   Match3MoveResult,
   Match3Position,
   Match3SpecialType,
@@ -33,9 +34,32 @@ function cloneBoard(board: Match3Tile[][]): Match3Tile[][] {
   return board.map((row) => row.map((tile) => ({ ...tile })));
 }
 
+function cloneTileList(board: Match3Tile[][]): Match3Tile[] {
+  return board.flatMap((row) => row.map((tile) => ({ ...tile })));
+}
+
 function randomKind(kinds: TileKind[]): TileKind {
   const index = Math.floor(Math.random() * kinds.length);
   return kinds[index];
+}
+
+function shuffleTiles(tiles: Match3Tile[]): Match3Tile[] {
+  const nextTiles = [...tiles];
+
+  for (let index = nextTiles.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    const temp = nextTiles[index];
+    nextTiles[index] = nextTiles[swapIndex];
+    nextTiles[swapIndex] = temp;
+  }
+
+  return nextTiles;
+}
+
+function rebuildBoard(rows: number, cols: number, tiles: Match3Tile[]): Match3Tile[][] {
+  return Array.from({ length: rows }, (_, row) =>
+    Array.from({ length: cols }, (_, col) => tiles[row * cols + col]),
+  );
 }
 
 function samePosition(a: Match3Position, b: Match3Position): boolean {
@@ -335,6 +359,20 @@ function collapseBoard(board: Match3Tile[][], matchedIds: Set<string>, kinds: Ti
   return nextBoard;
 }
 
+function collectClearedKinds(board: Match3Tile[][], matchedIds: Set<string>): TileKind[] {
+  const clearedKinds: TileKind[] = [];
+
+  for (const row of board) {
+    for (const tile of row) {
+      if (matchedIds.has(tile.id)) {
+        clearedKinds.push(tile.kind);
+      }
+    }
+  }
+
+  return clearedKinds;
+}
+
 function resolveBoard(
   board: Match3Tile[][],
   config: Match3Config,
@@ -346,6 +384,7 @@ function resolveBoard(
   let activatedSpecialCount = 0;
   let currentPreferredPosition = preferredSpecialPosition;
   let effectClearedIds: string[] = [];
+  let allClearedKinds: TileKind[] = [];
 
   while (true) {
     const groups = collectMatchGroups(currentBoard);
@@ -355,6 +394,7 @@ function resolveBoard(
         board: currentBoard,
         clearedCount: totalCleared,
         clearedIds: effectClearedIds,
+        clearedKinds: allClearedKinds,
         matched: totalCleared > 0,
         generatedSpecialCount,
         activatedSpecialCount,
@@ -366,6 +406,9 @@ function resolveBoard(
 
     generatedSpecialCount += applySpecialCreation(currentBoard, matchedIds, spawns);
     activatedSpecialCount += expandSpecialEffects(currentBoard, matchedIds);
+
+    const currentClearedKinds = collectClearedKinds(currentBoard, matchedIds);
+    allClearedKinds = [...allClearedKinds, ...currentClearedKinds];
 
     if (effectClearedIds.length === 0) {
       effectClearedIds = Array.from(matchedIds);
@@ -388,6 +431,7 @@ export function applyMove(
       board,
       clearedCount: 0,
       clearedIds: [],
+      clearedKinds: [],
       matched: false,
       generatedSpecialCount: 0,
       activatedSpecialCount: 0,
@@ -402,6 +446,7 @@ export function applyMove(
       board,
       clearedCount: 0,
       clearedIds: [],
+      clearedKinds: [],
       matched: false,
       generatedSpecialCount: 0,
       activatedSpecialCount: 0,
@@ -423,6 +468,7 @@ export function activateSpecialTile(
       board,
       clearedCount: 0,
       clearedIds: [],
+      clearedKinds: [],
       matched: false,
       generatedSpecialCount: 0,
       activatedSpecialCount: 0,
@@ -432,6 +478,7 @@ export function activateSpecialTile(
   const currentBoard = cloneBoard(board);
   const matchedIds = new Set<string>([currentBoard[position.row][position.col].id]);
   const activatedSpecialCount = expandSpecialEffects(currentBoard, matchedIds);
+  const clearedKinds = collectClearedKinds(currentBoard, matchedIds);
   const clearedCount = matchedIds.size;
   const clearedIds = Array.from(matchedIds);
   const collapsedBoard = collapseBoard(currentBoard, matchedIds, config.tileKinds);
@@ -440,6 +487,7 @@ export function activateSpecialTile(
     board: collapsedBoard,
     clearedCount,
     clearedIds,
+    clearedKinds,
     matched: true,
     generatedSpecialCount: 0,
     activatedSpecialCount,
@@ -447,6 +495,10 @@ export function activateSpecialTile(
 }
 
 export function boardHasPossibleMove(board: Match3Tile[][]): boolean {
+  return findFirstPossibleMove(board) !== null;
+}
+
+export function findFirstPossibleMove(board: Match3Tile[][]): Match3Hint | null {
   const rows = board.length;
   const cols = board[0]?.length ?? 0;
 
@@ -455,22 +507,30 @@ export function boardHasPossibleMove(board: Match3Tile[][]): boolean {
       const current = { row, col };
 
       if (col + 1 < cols) {
-        const swapped = swapTiles(board, current, { row, col: col + 1 });
+        const right = { row, col: col + 1 };
+        const swapped = swapTiles(board, current, right);
         if (collectMatchGroups(swapped).length > 0) {
-          return true;
+          return {
+            from: current,
+            to: right,
+          };
         }
       }
 
       if (row + 1 < rows) {
-        const swapped = swapTiles(board, current, { row: row + 1, col });
+        const down = { row: row + 1, col };
+        const swapped = swapTiles(board, current, down);
         if (collectMatchGroups(swapped).length > 0) {
-          return true;
+          return {
+            from: current,
+            to: down,
+          };
         }
       }
     }
   }
 
-  return false;
+  return null;
 }
 
 export function createPlayableBoard(config: Match3Config): Match3Tile[][] {
@@ -499,4 +559,57 @@ export function countInitialPotentialMatches(board: Match3Tile[][]): number {
   }
 
   return count;
+}
+
+export function countSpecialTiles(board: Match3Tile[][]): number {
+  return board.flat().filter((tile) => Boolean(tile.special)).length;
+}
+
+export function shufflePlayableBoard(board: Match3Tile[][], config: Match3Config): Match3Tile[][] {
+  const sourceTiles = cloneTileList(board);
+  let guard = 0;
+
+  while (guard < 200) {
+    const shuffledBoard = rebuildBoard(config.rows, config.cols, shuffleTiles(sourceTiles));
+
+    if (countInitialPotentialMatches(shuffledBoard) === 0 && boardHasPossibleMove(shuffledBoard)) {
+      return shuffledBoard;
+    }
+
+    guard += 1;
+  }
+
+  return createPlayableBoard(config);
+}
+
+export function settleRemainingSpecialTiles(board: Match3Tile[][]): {
+  remainingSpecialTiles: number;
+  explodedTileCount: number;
+  activatedSpecialCount: number;
+} {
+  const currentBoard = cloneBoard(board);
+  const matchedIds = new Set<string>();
+
+  for (const tile of currentBoard.flat()) {
+    if (tile.special) {
+      matchedIds.add(tile.id);
+    }
+  }
+
+  if (matchedIds.size === 0) {
+    return {
+      remainingSpecialTiles: 0,
+      explodedTileCount: 0,
+      activatedSpecialCount: 0,
+    };
+  }
+
+  const remainingSpecialTiles = matchedIds.size;
+  const activatedSpecialCount = expandSpecialEffects(currentBoard, matchedIds);
+
+  return {
+    remainingSpecialTiles,
+    explodedTileCount: matchedIds.size,
+    activatedSpecialCount,
+  };
 }

@@ -2,5 +2,7 @@ node_modules/
 dist/
 .vite/
 coverage/
+vite-dev.err.log
+vite-dev.out.log
 
 tsconfig.app.tsbuildinfo

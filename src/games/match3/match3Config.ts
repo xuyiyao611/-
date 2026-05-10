@@ -1,22 +1,18 @@
-import type { Difficulty } from "@/shared/types/app";
+import { allTileKinds } from "@/games/match3/match3Assets";
 import type { Match3Config } from "@/games/match3/match3Types";
+import type { Difficulty } from "@/shared/types/app";
 
-export const match3EasyConfig: Match3Config = {
-  rows: 6,
-  cols: 6,
-  moveLimit: 25,
-  targetScore: 3000,
-  tileKinds: ["sun", "leaf", "drop", "berry"],
-};
-
-export const match3HardConfig: Match3Config = {
-  rows: 7,
-  cols: 7,
-  moveLimit: 25,
-  targetScore: 4000,
-  tileKinds: ["sun", "leaf", "drop", "berry", "star"],
-};
+function pickTileKinds(difficulty: Difficulty) {
+  return difficulty === "hard" ? allTileKinds.slice(2, 8) : allTileKinds.slice(0, 6);
+}
 
 export function getMatch3Config(difficulty: Difficulty): Match3Config {
-  return difficulty === "hard" ? match3HardConfig : match3EasyConfig;
+  return {
+    rows: 9,
+    cols: 9,
+    moveLimit: difficulty === "hard" ? 27 : 32,
+    targetScore: difficulty === "hard" ? 4500 : 3200,
+    shuffleLimit: 99,
+    tileKinds: pickTileKinds(difficulty),
+  };
 }

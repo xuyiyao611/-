@@ -1,5 +1,21 @@
-import type { AppAction, AppState } from "@/shared/types/app";
+import { allTileKinds } from "@/games/match3/match3Assets";
+import {
+  FRAGMENTS_PER_CHARACTER,
+  foodPrices,
+  getAffectionGain,
+} from "@/shared/config/collectionRules";
+import type {
+  AppAction,
+  AppState,
+  AffectionStats,
+  CharacterCollection,
+  ClearedElementStats,
+  FoodInventory,
+  FragmentInventory,
+} from "@/shared/types/app";
 import type { GameSession } from "@/shared/types/session";
+
+const INITIAL_COINS = 10;
 
 function createSession(state: AppState): GameSession | null {
   if (!state.gameType || !state.difficulty) {
@@ -16,6 +32,63 @@ function createSession(state: AppState): GameSession | null {
   };
 }
 
+function createEmptyCounter(): ClearedElementStats {
+  return {
+    sun: 0,
+    leaf: 0,
+    drop: 0,
+    berry: 0,
+    star: 0,
+    candy: 0,
+    sprout: 0,
+    puff: 0,
+  };
+}
+
+function createEmptyFragments(): FragmentInventory {
+  return createEmptyCounter();
+}
+
+function createEmptyCollection(): CharacterCollection {
+  return createEmptyCounter();
+}
+
+function createEmptyAffection(): AffectionStats {
+  return createEmptyCounter();
+}
+
+function createEmptyFoods(): FoodInventory {
+  return {
+    pudding: 0,
+    soda: 0,
+    popsicle: 0,
+  };
+}
+
+function applyFragmentRewards(
+  currentFragments: FragmentInventory,
+  currentCollection: CharacterCollection,
+  gains: ClearedElementStats,
+): {
+  fragments: FragmentInventory;
+  collectedCharacters: CharacterCollection;
+} {
+  const nextFragments: FragmentInventory = { ...currentFragments };
+  const nextCollection: CharacterCollection = { ...currentCollection };
+
+  for (const kind of allTileKinds) {
+    const total = nextFragments[kind] + gains[kind];
+    const redeemedCount = Math.floor(total / FRAGMENTS_PER_CHARACTER);
+    nextFragments[kind] = total % FRAGMENTS_PER_CHARACTER;
+    nextCollection[kind] += redeemedCount;
+  }
+
+  return {
+    fragments: nextFragments,
+    collectedCharacters: nextCollection,
+  };
+}
+
 export function createInitialAppState(): AppState {
   return {
     scene: "home",
@@ -23,22 +96,30 @@ export function createInitialAppState(): AppState {
     difficulty: null,
     result: null,
     session: null,
+    coins: INITIAL_COINS,
+    fragments: createEmptyFragments(),
+    collectedCharacters: createEmptyCollection(),
+    affection: createEmptyAffection(),
+    foods: createEmptyFoods(),
   };
 }
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case "GO_HOME":
-      return createInitialAppState();
-    case "OPEN_MODE_SELECT":
       return {
         ...state,
-        scene: "modeSelect",
+        scene: "home",
+        result: null,
+        session: null,
+        difficulty: null,
       };
-    case "SELECT_GAME_TYPE":
+    case "RESET_NEW_GAME":
+      return createInitialAppState();
+    case "OPEN_DIFFICULTY_SELECT":
       return {
         ...state,
-        gameType: action.payload,
+        gameType: "match3",
         difficulty: null,
         result: null,
         session: null,
@@ -48,7 +129,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       if (!state.gameType) {
         return {
           ...state,
-          scene: "modeSelect",
+          gameType: "match3",
+          scene: "difficultySelect",
         };
       }
 
@@ -64,18 +146,34 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         session: createSession(nextState),
       };
     }
-    case "FINISH_GAME":
+    case "FINISH_GAME": {
       if (!state.gameType || !state.difficulty || !state.session) {
         return {
           ...state,
           scene: "home",
         };
       }
+
+      const rewardGranted = action.payload.status === "win";
+      const fragmentGains = rewardGranted
+        ? action.payload.settlement?.fragmentGains ?? createEmptyCounter()
+        : createEmptyCounter();
+      const collectionResult = rewardGranted
+        ? applyFragmentRewards(state.fragments, state.collectedCharacters, fragmentGains)
+        : {
+            fragments: state.fragments,
+            collectedCharacters: state.collectedCharacters,
+          };
+
       return {
         ...state,
         result: action.payload,
+        coins: state.coins + (rewardGranted ? action.payload.settlement?.coinReward ?? 0 : 0),
+        fragments: collectionResult.fragments,
+        collectedCharacters: collectionResult.collectedCharacters,
         scene: "result",
       };
+    }
     case "RESTART_GAME":
       if (!state.gameType || !state.difficulty) {
         return createInitialAppState();
@@ -86,29 +184,55 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         scene: "game",
         session: createSession(state),
       };
-    case "BACK_TO_MODE_SELECT":
+    case "BACK_TO_DIFFICULTY_SELECT":
       return {
         ...state,
         difficulty: null,
         result: null,
         session: null,
-        scene: "modeSelect",
+        gameType: "match3",
+        scene: "difficultySelect",
       };
-    case "BACK_TO_DIFFICULTY_SELECT":
-      if (!state.gameType) {
-        return {
-          ...state,
-          scene: "modeSelect",
-        };
+    case "SPEND_COINS":
+      return {
+        ...state,
+        coins: Math.max(0, state.coins - action.payload),
+      };
+    case "BUY_FOOD": {
+      const price = foodPrices[action.payload];
+
+      if (state.coins < price) {
+        return state;
       }
 
       return {
         ...state,
-        difficulty: null,
-        result: null,
-        session: null,
-        scene: "difficultySelect",
+        coins: state.coins - price,
+        foods: {
+          ...state.foods,
+          [action.payload]: state.foods[action.payload] + 1,
+        },
       };
+    }
+    case "FEED_CHARACTER": {
+      const { kind, foodType } = action.payload;
+
+      if (state.collectedCharacters[kind] <= 0 || state.foods[foodType] <= 0) {
+        return state;
+      }
+
+      return {
+        ...state,
+        affection: {
+          ...state.affection,
+          [kind]: state.affection[kind] + getAffectionGain(kind, foodType),
+        },
+        foods: {
+          ...state.foods,
+          [foodType]: state.foods[foodType] - 1,
+        },
+      };
+    }
     default:
       return state;
   }

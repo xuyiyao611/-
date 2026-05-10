@@ -24,9 +24,9 @@ export function DifficultySelectPage({
 
   return (
     <PageFrame
-      eyebrow="P1 页面流转"
+      eyebrow="P1 难度选择"
       title={title}
-      description="这一层只负责把难度参数准确传给后续游戏页。简单和困难会在后续阶段通过配置驱动实际差异。"
+      description="难度会切换目标分数、步数限制和本局刷新元素，棋盘统一为 9 x 9。"
     >
       <div className="selection-grid">
         {difficulties.map((difficulty) => {
@@ -48,7 +48,7 @@ export function DifficultySelectPage({
 
       <div className="button-row">
         <button className="secondary-button" onClick={onBack} type="button">
-          返回玩法选择
+          返回首页
         </button>
       </div>
     </PageFrame>

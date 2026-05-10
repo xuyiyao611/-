@@ -2,7 +2,6 @@ import { useMemo, useReducer } from "react";
 import { DifficultySelectPage } from "@/pages/difficulty-select/DifficultySelectPage";
 import { GamePage } from "@/pages/game/GamePage";
 import { HomePage } from "@/pages/home/HomePage";
-import { ModeSelectPage } from "@/pages/mode-select/ModeSelectPage";
 import { ResultPage } from "@/pages/result/ResultPage";
 import { difficultyLabels, gameTypeLabels } from "@/shared/config/gameCatalog";
 import type { AppState } from "@/shared/types/app";
@@ -15,14 +14,15 @@ export function App() {
     if (state.scene === "difficultySelect" && !state.gameType) {
       return {
         ...state,
-        scene: "modeSelect",
+        gameType: "match3",
       };
     }
 
     if (state.scene === "game" && (!state.gameType || !state.difficulty || !state.session)) {
       return {
         ...state,
-        scene: state.gameType ? "difficultySelect" : "modeSelect",
+        gameType: "match3",
+        scene: "difficultySelect",
       };
     }
 
@@ -40,15 +40,19 @@ export function App() {
   }, [state]);
 
   if (safeState.scene === "home") {
-    return <HomePage onStart={() => dispatch({ type: "OPEN_MODE_SELECT" })} />;
-  }
-
-  if (safeState.scene === "modeSelect") {
     return (
-      <ModeSelectPage
-        selectedGameType={safeState.gameType}
-        onBack={() => dispatch({ type: "GO_HOME" })}
-        onSelect={(gameType) => dispatch({ type: "SELECT_GAME_TYPE", payload: gameType })}
+      <HomePage
+        coins={safeState.coins}
+        fragments={safeState.fragments}
+        collectedCharacters={safeState.collectedCharacters}
+        affection={safeState.affection}
+        foods={safeState.foods}
+        onStart={() => dispatch({ type: "OPEN_DIFFICULTY_SELECT" })}
+        onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
+        onBuyFood={(foodType) => dispatch({ type: "BUY_FOOD", payload: foodType })}
+        onFeedCharacter={(kind, foodType) =>
+          dispatch({ type: "FEED_CHARACTER", payload: { kind, foodType } })
+        }
       />
     );
   }
@@ -58,7 +62,7 @@ export function App() {
       <DifficultySelectPage
         gameType={safeState.gameType}
         selectedDifficulty={safeState.difficulty}
-        onBack={() => dispatch({ type: "OPEN_MODE_SELECT" })}
+        onBack={() => dispatch({ type: "GO_HOME" })}
         onSelect={(difficulty) => dispatch({ type: "SELECT_DIFFICULTY", payload: difficulty })}
       />
     );
@@ -75,9 +79,10 @@ export function App() {
         session={safeState.session}
         gameType={safeState.gameType}
         difficulty={safeState.difficulty}
+        coins={safeState.coins}
+        onSpendCoins={(amount) => dispatch({ type: "SPEND_COINS", payload: amount })}
         onBackHome={() => dispatch({ type: "GO_HOME" })}
-        onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
-        onBackDifficultySelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
+        onBackModeSelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
         onFinish={(result) => dispatch({ type: "FINISH_GAME", payload: result })}
       />
     );
@@ -92,15 +97,31 @@ export function App() {
   ) {
     return (
       <ResultPage
+        coins={safeState.coins}
+        fragments={safeState.fragments}
+        collectedCharacters={safeState.collectedCharacters}
         result={safeState.result}
         summary={`${gameTypeLabels[safeState.gameType]} / ${difficultyLabels[safeState.difficulty]}`}
         onRestart={() => dispatch({ type: "RESTART_GAME" })}
         onBackHome={() => dispatch({ type: "GO_HOME" })}
-        onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
-        onBackDifficultySelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
+        onBackModeSelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
       />
     );
   }
 
-  return <HomePage onStart={() => dispatch({ type: "OPEN_MODE_SELECT" })} />;
+  return (
+    <HomePage
+      coins={safeState.coins}
+      fragments={safeState.fragments}
+      collectedCharacters={safeState.collectedCharacters}
+      affection={safeState.affection}
+      foods={safeState.foods}
+      onStart={() => dispatch({ type: "OPEN_DIFFICULTY_SELECT" })}
+      onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
+      onBuyFood={(foodType) => dispatch({ type: "BUY_FOOD", payload: foodType })}
+      onFeedCharacter={(kind, foodType) =>
+        dispatch({ type: "FEED_CHARACTER", payload: { kind, foodType } })
+      }
+    />
+  );
 }
