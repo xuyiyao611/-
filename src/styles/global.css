@@ -280,6 +280,10 @@ button {
   background: linear-gradient(180deg, #ffd9e2, #ff8cac);
 }
 
+.match3-star {
+  background: linear-gradient(180deg, #efe0ff, #b391ff);
+}
+
 .status-strip span,
 .result-banner span,
 .result-banner strong {

@@ -1,4 +1,4 @@
-export type TileKind = "sun" | "leaf" | "drop" | "berry";
+export type TileKind = "sun" | "leaf" | "drop" | "berry" | "star";
 
 export type Match3Tile = {
   id: string;

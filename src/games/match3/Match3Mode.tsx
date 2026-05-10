@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { match3EasyConfig } from "@/games/match3/match3Config";
+import { getMatch3Config } from "@/games/match3/match3Config";
 import { applyMove, createPlayableBoard } from "@/games/match3/match3Logic";
 import type { Match3Position, Match3Tile, TileKind } from "@/games/match3/match3Types";
-import type { ResultPayload } from "@/shared/types/app";
+import type { Difficulty, ResultPayload } from "@/shared/types/app";
 import type { GameSession } from "@/shared/types/session";
 
 type Match3ModeProps = {
   session: GameSession;
+  difficulty: Difficulty;
   onFinish: (payload: ResultPayload) => void;
 };
 
@@ -15,14 +16,15 @@ const tileLabels: Record<TileKind, string> = {
   leaf: "LEAF",
   drop: "DROP",
   berry: "BERRY",
+  star: "STAR",
 };
 
 function isSamePosition(a: Match3Position | null, b: Match3Position): boolean {
   return Boolean(a && a.row === b.row && a.col === b.col);
 }
 
-export function Match3Mode({ session, onFinish }: Match3ModeProps) {
-  const config = match3EasyConfig;
+export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
+  const config = useMemo(() => getMatch3Config(difficulty), [difficulty]);
   const [board, setBoard] = useState<Match3Tile[][]>(() => createPlayableBoard(config));
   const [selected, setSelected] = useState<Match3Position | null>(null);
   const [movesLeft, setMovesLeft] = useState(config.moveLimit);
@@ -35,14 +37,14 @@ export function Match3Mode({ session, onFinish }: Match3ModeProps) {
     setMovesLeft(config.moveLimit);
     setScore(0);
     setStatusText("请选择一个方块，再点击相邻方块进行交换。");
-  }, [session.runId]);
+  }, [config, session.runId]);
 
   useEffect(() => {
     if (score >= config.targetScore) {
       onFinish({
         status: "win",
         title: "开心消消乐胜利",
-        description: `你在 ${config.moveLimit - movesLeft} 步内完成了目标分数。`,
+        description: `你在 ${config.moveLimit - movesLeft} 步内完成了 ${difficulty === "hard" ? "困难模式" : "简单模式"} 的目标分数。`,
       });
       return;
     }
@@ -54,11 +56,13 @@ export function Match3Mode({ session, onFinish }: Match3ModeProps) {
         description: `步数已用尽，当前分数 ${score}，目标分数 ${config.targetScore}。`,
       });
     }
-  }, [config.moveLimit, config.targetScore, movesLeft, onFinish, score]);
+  }, [config.moveLimit, config.targetScore, difficulty, movesLeft, onFinish, score]);
 
   const progressText = useMemo(() => {
     return `分数 ${score} / ${config.targetScore}`;
   }, [config.targetScore, score]);
+
+  const difficultyText = difficulty === "hard" ? "困难" : "简单";
 
   function handleTileClick(position: Match3Position) {
     if (movesLeft <= 0) {
@@ -96,8 +100,8 @@ export function Match3Mode({ session, onFinish }: Match3ModeProps) {
     <section className="mode-shell">
       <header className="mode-header">
         <div>
-          <p className="mode-kicker">三消 / 简单</p>
-          <h2>开心消消乐 - 简单模式</h2>
+          <p className="mode-kicker">三消 / {difficultyText}</p>
+          <h2>开心消消乐 - {difficultyText}模式</h2>
         </div>
         <div className="mode-badge-group">
           <span>运行编号 #{session.runId}</span>
@@ -118,12 +122,12 @@ export function Match3Mode({ session, onFinish }: Match3ModeProps) {
           </ul>
         </article>
         <article className="mode-card">
-          <h3>当前规则</h3>
+          <h3>当前模式特征</h3>
           <ul className="mode-list">
-            <li>仅允许交换相邻方块</li>
-            <li>无法形成消除的交换不会生效</li>
-            <li>每次成功消除按数量累积分数</li>
-            <li>达到目标分数即胜利</li>
+            <li>棋盘大小：{config.rows} x {config.cols}</li>
+            <li>元素种类：{config.tileKinds.length} 种</li>
+            <li>目标分数：{config.targetScore}</li>
+            <li>步数限制：{config.moveLimit}</li>
           </ul>
         </article>
       </div>
@@ -134,6 +138,7 @@ export function Match3Mode({ session, onFinish }: Match3ModeProps) {
           <span>
             棋盘 {config.rows} x {config.cols}
           </span>
+          <span>元素 {config.tileKinds.length} 种</span>
         </div>
         <p className="match3-hint">{statusText}</p>
       </div>
