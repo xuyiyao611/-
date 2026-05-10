@@ -1,3 +1,5 @@
+import type { GameSession } from "@/shared/types/session";
+
 export type GameType = "match3" | "sheep";
 
 export type Difficulty = "easy" | "hard";
@@ -17,6 +19,7 @@ export type AppState = {
   gameType: GameType | null;
   difficulty: Difficulty | null;
   result: ResultPayload | null;
+  session: GameSession | null;
 };
 
 export type AppAction =

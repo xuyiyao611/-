@@ -19,14 +19,17 @@ export function App() {
       };
     }
 
-    if (state.scene === "game" && (!state.gameType || !state.difficulty)) {
+    if (state.scene === "game" && (!state.gameType || !state.difficulty || !state.session)) {
       return {
         ...state,
         scene: state.gameType ? "difficultySelect" : "modeSelect",
       };
     }
 
-    if (state.scene === "result" && (!state.gameType || !state.difficulty || !state.result)) {
+    if (
+      state.scene === "result" &&
+      (!state.gameType || !state.difficulty || !state.result || !state.session)
+    ) {
       return {
         ...state,
         scene: state.gameType ? "difficultySelect" : "home",
@@ -61,9 +64,15 @@ export function App() {
     );
   }
 
-  if (safeState.scene === "game" && safeState.gameType && safeState.difficulty) {
+  if (
+    safeState.scene === "game" &&
+    safeState.gameType &&
+    safeState.difficulty &&
+    safeState.session
+  ) {
     return (
       <GamePage
+        session={safeState.session}
         gameType={safeState.gameType}
         difficulty={safeState.difficulty}
         onBackHome={() => dispatch({ type: "GO_HOME" })}
@@ -77,7 +86,8 @@ export function App() {
     safeState.scene === "result" &&
     safeState.result &&
     safeState.gameType &&
-    safeState.difficulty
+    safeState.difficulty &&
+    safeState.session
   ) {
     return (
       <ResultPage

@@ -156,6 +156,79 @@ button {
   margin-bottom: 20px;
 }
 
+.mode-shell {
+  margin-bottom: 24px;
+}
+
+.mode-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.mode-header h2 {
+  margin: 4px 0 0;
+  color: #0f2942;
+}
+
+.mode-kicker {
+  margin: 0;
+  color: #8b5a2b;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mode-badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.mode-badge-group span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(247, 243, 232, 0.95);
+  color: #5f4a1d;
+  font-size: 13px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.mode-card {
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(16, 32, 48, 0.1);
+  background: rgba(245, 249, 252, 0.85);
+}
+
+.mode-card h3 {
+  margin: 0 0 10px;
+  color: #16354c;
+}
+
+.mode-card p {
+  margin: 0;
+  color: #486175;
+}
+
+.mode-list {
+  margin: 0;
+  padding-left: 20px;
+  color: #486175;
+}
+
 .status-strip span,
 .result-banner span,
 .result-banner strong {

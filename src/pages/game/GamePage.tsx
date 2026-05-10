@@ -1,8 +1,11 @@
 import { PageFrame } from "@/components/PageFrame";
+import { GameHost } from "@/games/GameHost";
 import { difficultyLabels, gameTypeLabels } from "@/shared/config/gameCatalog";
 import type { Difficulty, GameType, ResultPayload } from "@/shared/types/app";
+import type { GameSession } from "@/shared/types/session";
 
 type GamePageProps = {
+  session: GameSession;
   gameType: GameType;
   difficulty: Difficulty;
   onBackHome: () => void;
@@ -11,6 +14,7 @@ type GamePageProps = {
 };
 
 export function GamePage({
+  session,
   gameType,
   difficulty,
   onBackHome,
@@ -22,57 +26,22 @@ export function GamePage({
 
   return (
     <PageFrame
-      eyebrow="P1 游戏容器"
+      eyebrow="P2 玩法入口接入"
       title="游戏场景容器"
-      description={`当前已进入 ${gameLabel} / ${difficultyLabel}。P1 阶段先保证场景参数和主流程闭环正确，P3 之后再接入真实玩法。`}
+      description={`当前已进入 ${gameLabel} / ${difficultyLabel}。本阶段重点是把玩法与难度参数正式接入游戏宿主组件，为后续真实算法预留稳定入口。`}
     >
       <div className="status-strip">
         <span>玩法：{gameLabel}</span>
         <span>难度：{difficultyLabel}</span>
-        <span>阶段：主流程容器</span>
+        <span>运行编号：#{session.runId}</span>
       </div>
 
-      <div className="placeholder-board">
-        <div className="placeholder-column">
-          <h2>当前阶段内容</h2>
-          <p>这里会在后续阶段替换为真实玩法视图和核心算法驱动的数据界面。</p>
-        </div>
-        <div className="placeholder-column">
-          <h2>下一步接入</h2>
-          <p>
-            开心消消乐会接入棋盘、交换、消除、掉落逻辑；羊了个羊会接入卡牌层级、槽位和三消逻辑。
-          </p>
-        </div>
-      </div>
-
-      <div className="button-grid">
-        <button
-          className="primary-button"
-          onClick={() =>
-            onFinish({
-              status: "win",
-              title: "示例胜利",
-              description: "P1 阶段用于验证游戏容器到结果页的主流程闭环。",
-            })
-          }
-          type="button"
-        >
-          模拟胜利
-        </button>
-        <button
-          className="secondary-button"
-          onClick={() =>
-            onFinish({
-              status: "lose",
-              title: "示例失败",
-              description: "P1 阶段用于验证失败结果页和返回流程。",
-            })
-          }
-          type="button"
-        >
-          模拟失败
-        </button>
-      </div>
+      <GameHost
+        session={session}
+        gameType={gameType}
+        difficulty={difficulty}
+        onFinish={onFinish}
+      />
 
       <div className="button-row">
         <button className="ghost-button" onClick={onBackModeSelect} type="button">

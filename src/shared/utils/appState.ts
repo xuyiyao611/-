@@ -1,4 +1,20 @@
 import type { AppAction, AppState } from "@/shared/types/app";
+import type { GameSession } from "@/shared/types/session";
+
+function createSession(state: AppState): GameSession | null {
+  if (!state.gameType || !state.difficulty) {
+    return null;
+  }
+
+  const previousRunId = state.session?.runId ?? 0;
+
+  return {
+    gameType: state.gameType,
+    difficulty: state.difficulty,
+    startedAt: Date.now(),
+    runId: previousRunId + 1,
+  };
+}
 
 export function createInitialAppState(): AppState {
   return {
@@ -6,6 +22,7 @@ export function createInitialAppState(): AppState {
     gameType: null,
     difficulty: null,
     result: null,
+    session: null,
   };
 }
 
@@ -24,23 +41,31 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         gameType: action.payload,
         difficulty: null,
         result: null,
+        session: null,
         scene: "difficultySelect",
       };
-    case "SELECT_DIFFICULTY":
+    case "SELECT_DIFFICULTY": {
       if (!state.gameType) {
         return {
           ...state,
           scene: "modeSelect",
         };
       }
-      return {
+
+      const nextState: AppState = {
         ...state,
         difficulty: action.payload,
         result: null,
         scene: "game",
       };
+
+      return {
+        ...nextState,
+        session: createSession(nextState),
+      };
+    }
     case "FINISH_GAME":
-      if (!state.gameType || !state.difficulty) {
+      if (!state.gameType || !state.difficulty || !state.session) {
         return {
           ...state,
           scene: "home",
@@ -59,12 +84,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         result: null,
         scene: "game",
+        session: createSession(state),
       };
     case "BACK_TO_MODE_SELECT":
       return {
         ...state,
         difficulty: null,
         result: null,
+        session: null,
         scene: "modeSelect",
       };
     default:
