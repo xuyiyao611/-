@@ -6,7 +6,6 @@ import {
   BREAKTHROUGH_AFFECTION,
   characterDescriptions,
   characterFavoriteFoods,
-  FRAGMENTS_PER_CHARACTER,
   getAffectionGain,
   getFoodPreferenceLabel,
 } from "@/shared/config/collectionRules";
@@ -34,6 +33,10 @@ type HomePageProps = {
   onFeedCharacter: (kind: TileKind, foodType: FoodType) => void;
   onBreakthrough: (kind: TileKind) => void;
 };
+
+function getAffectionText(value: number): string {
+  return value >= BREAKTHROUGH_AFFECTION ? "好感度已满" : `好感度：${value} / ${BREAKTHROUGH_AFFECTION}`;
+}
 
 export function HomePage({
   coins,
@@ -89,14 +92,49 @@ export function HomePage({
 
   return (
     <PageFrame
-      eyebrow="P1 首页与养成"
-      title="消除大师"
-      description="当前版本已接入角色碎片收集、角色兑换、商店购买、喂食养成和突破形态。挑战成功后才会获得金币与碎片奖励。"
+      eyebrow="Cozy Collection"
+      title="角落消消"
+      description="把碎片、金币、零食和好感度慢慢攒起来，让每个小角色都在你的角落里安稳住下。"
       hero
     >
-      <div className="status-strip">
-        <CoinCounter emphasize value={coins} />
-      </div>
+      <section className="home-hero">
+        <div className="home-hero-copy">
+          <span className="home-hero-badge">治愈收集 / 三消养成</span>
+          <h2 className="home-subtitle">今天也陪它们慢慢长大</h2>
+          <p className="home-subtext">
+            挑战成功后领取金币与碎片奖励，喂它们喜欢的零食，攒满好感度，再一起迎来突破时刻。
+          </p>
+          <div className="button-row home-hero-actions">
+            <button className="primary-button" onClick={onStart} type="button">
+              开始游戏
+            </button>
+            <button className="secondary-button" onClick={onNewGame} type="button">
+              开新游戏
+            </button>
+          </div>
+        </div>
+
+        <div className="home-hero-card">
+          <div className="status-strip home-status-strip">
+            <CoinCounter emphasize value={coins} />
+            <span>已解锁角色：{unlockedKinds.length}</span>
+            <span>零食种类：3</span>
+          </div>
+          <div className="home-hero-gallery">
+            {allTileKinds.slice(0, 4).map((kind) => (
+              <div className="home-hero-portrait" key={`hero-${kind}`}>
+                <img
+                  alt={tileVisuals[kind].label}
+                  className="collection-avatar"
+                  draggable={false}
+                  src={breakthroughs[kind] ? tileVisuals[kind].awakenedImage : tileVisuals[kind].image}
+                />
+                <span>{tileVisuals[kind].label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {feedMessage ? <p className="feed-toast">{feedMessage}</p> : null}
 
@@ -108,17 +146,17 @@ export function HomePage({
       ) : null}
 
       <div className="feature-grid">
-        <article className="feature-card">
-          <h2>9 x 9 棋盘</h2>
-          <p>单局棋盘固定为 9 x 9，每局只出现 6 类元素，节奏更集中，方便测试结算与养成闭环。</p>
+        <article className="feature-card feature-card-warm">
+          <h2>安静的小棋盘</h2>
+          <p>9 x 9 棋盘配合 6 类元素，节奏更柔和，适合慢慢收集和反复体验。</p>
         </article>
-        <article className="feature-card">
-          <h2>胜利后发奖励</h2>
-          <p>只有挑战成功才会把本局消除记录转成碎片和金币，失败局只保留统计展示。</p>
+        <article className="feature-card feature-card-warm">
+          <h2>赢了才有礼物</h2>
+          <p>只有通关后才会结算金币和碎片奖励，让每次胜利都更像一次认真照顾。</p>
         </article>
-        <article className="feature-card">
-          <h2>突破养成</h2>
-          <p>角色好感度达到 20 后可以突破，突破后会切换专属新立绘，并播放升级动画。</p>
+        <article className="feature-card feature-card-warm">
+          <h2>喂食与突破</h2>
+          <p>给它们喜欢的零食会涨得更快，等好感度满了，就能解锁更温暖的新形态。</p>
         </article>
       </div>
 
@@ -127,11 +165,13 @@ export function HomePage({
         <div className="collection-grid">
           {unlockedKinds.length > 0 ? (
             unlockedKinds.map((kind) => {
-              const visual = breakthroughs[kind] ? tileVisuals[kind].awakenedImage : tileVisuals[kind].image;
+              const visual = breakthroughs[kind]
+                ? tileVisuals[kind].awakenedImage
+                : tileVisuals[kind].image;
 
               return (
                 <article
-                  className={`collection-card collection-card-unlocked${animatedKind === kind ? " character-awakened" : ""}`}
+                  className={`collection-card collection-card-unlocked collection-card-soft${animatedKind === kind ? " character-awakened" : ""}`}
                   key={`owned-${kind}`}
                 >
                   <img
@@ -142,25 +182,25 @@ export function HomePage({
                   />
                   <strong>{tileVisuals[kind].label}</strong>
                   <span>已兑换：{collectedCharacters[kind]}</span>
-                  <span>好感度：{affection[kind]}</span>
+                  <span>{getAffectionText(affection[kind])}</span>
                   <span>{breakthroughs[kind] ? "状态：已突破" : "状态：未突破"}</span>
                 </article>
               );
             })
           ) : (
-            <article className="collection-card collection-card-empty">
+            <article className="collection-card collection-card-empty collection-card-soft">
               <strong>暂未兑换角色</strong>
-              <span>先挑战成功，积累碎片后再来兑换。</span>
+              <span>先挑战成功，积累碎片后再来把它们接回家。</span>
             </article>
           )}
         </div>
       </section>
 
       <section className="collection-panel">
-        <h2 className="section-title">商店</h2>
+        <h2 className="section-title">暖心商店</h2>
         <div className="collection-grid">
           {Object.entries(foodVisuals).map(([foodType, food]) => (
-            <article className="collection-card shop-card" key={foodType}>
+            <article className="collection-card shop-card collection-card-soft" key={foodType}>
               <img
                 alt={food.label}
                 className="collection-avatar"
@@ -184,17 +224,22 @@ export function HomePage({
       </section>
 
       <section className="collection-panel">
-        <h2 className="section-title">角色介绍</h2>
+        <h2 className="section-title">角色图鉴</h2>
+        <p className="collection-rule-note">
+          碎片按累计计算：每消除 1 个元素，就增加 1 个对应碎片；累计到 200 可兑换角色，超过 200 后每多 20 个碎片会自动转化为 1 金币。
+        </p>
         <div className="collection-grid character-grid">
           {allTileKinds.map((kind) => {
             const unlocked = collectedCharacters[kind] > 0;
             const canBreakthrough =
               unlocked && affection[kind] >= BREAKTHROUGH_AFFECTION && !breakthroughs[kind];
-            const visual = breakthroughs[kind] ? tileVisuals[kind].awakenedImage : tileVisuals[kind].image;
+            const visual = breakthroughs[kind]
+              ? tileVisuals[kind].awakenedImage
+              : tileVisuals[kind].image;
 
             return (
               <article
-                className={`collection-card character-card${unlocked ? "" : " collection-card-locked"}${animatedKind === kind ? " character-awakened" : ""}`}
+                className={`collection-card character-card collection-card-soft${unlocked ? "" : " collection-card-locked"}${animatedKind === kind ? " character-awakened" : ""}`}
                 key={kind}
               >
                 <img
@@ -204,9 +249,9 @@ export function HomePage({
                   src={visual}
                 />
                 <strong>{tileVisuals[kind].label}</strong>
-                <span>碎片：{fragments[kind]} / {FRAGMENTS_PER_CHARACTER}</span>
+                <span>累计碎片：{fragments[kind]}</span>
                 <span>已兑换：{collectedCharacters[kind]}</span>
-                <span>好感度：{affection[kind]} / {BREAKTHROUGH_AFFECTION}</span>
+                <span>{getAffectionText(affection[kind])}</span>
                 <span>偏好食物：{getFoodPreferenceLabel(characterFavoriteFoods[kind])}</span>
                 <span>{breakthroughs[kind] ? "形态：突破立绘" : "形态：基础立绘"}</span>
                 <p className="character-description">{characterDescriptions[kind]}</p>
@@ -239,15 +284,6 @@ export function HomePage({
           })}
         </div>
       </section>
-
-      <div className="button-grid">
-        <button className="primary-button" onClick={onStart} type="button">
-          开始游戏
-        </button>
-        <button className="secondary-button" onClick={onNewGame} type="button">
-          开新游戏
-        </button>
-      </div>
 
       {breakthroughTarget ? (
         <div className="breakthrough-modal-backdrop" role="presentation">

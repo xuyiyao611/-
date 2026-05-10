@@ -1,7 +1,7 @@
 import type { Difficulty, GameType } from "@/shared/types/app";
 
 export const gameTypeLabels: Record<GameType, string> = {
-  match3: "开心消消乐",
+  match3: "角落消消",
 };
 
 export const difficultyLabels: Record<Difficulty, string> = {
@@ -10,7 +10,7 @@ export const difficultyLabels: Record<Difficulty, string> = {
 };
 
 export const gameTypeDescriptions: Record<GameType, string> = {
-  match3: "通过交换相邻方块形成三连消，验证棋盘、掉落、提示、洗牌和金币消耗规则。",
+  match3: "交换相邻方块形成三连消，收集角色碎片、金币和喂食资源，慢慢填满你的治愈角落。",
 };
 
 export const difficultyDescriptions: Record<Difficulty, string> = {

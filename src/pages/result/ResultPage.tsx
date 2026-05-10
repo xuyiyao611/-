@@ -1,7 +1,6 @@
 import { CoinCounter } from "@/components/CoinCounter";
 import { PageFrame } from "@/components/PageFrame";
 import { tileVisuals } from "@/games/match3/match3Assets";
-import { FRAGMENTS_PER_CHARACTER } from "@/shared/config/collectionRules";
 import type {
   CharacterCollection,
   FragmentInventory,
@@ -107,7 +106,7 @@ export function ResultPage({
                     碎片获得：
                     {result.settlement.rewardGranted ? `+${result.settlement.fragmentGains[kind]}` : "0"}
                   </span>
-                  <span>当前碎片：{fragments[kind]} / {FRAGMENTS_PER_CHARACTER}</span>
+                  <span>累计碎片：{fragments[kind]}</span>
                   <span>已兑换：{collectedCharacters[kind]}</span>
                 </article>
               ))}

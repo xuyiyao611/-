@@ -6,7 +6,7 @@ export type GameType = "match3";
 export type Difficulty = "easy" | "hard";
 export type FoodType = "pudding" | "soda" | "popsicle";
 
-export type SceneKey = "home" | "difficultySelect" | "game" | "result";
+export type SceneKey = "landing" | "home" | "difficultySelect" | "game" | "result";
 
 export type ResultStatus = "win" | "lose";
 
@@ -55,6 +55,7 @@ export type AppState = {
 };
 
 export type AppAction =
+  | { type: "ENTER_HOME" }
   | { type: "GO_HOME" }
   | { type: "RESET_NEW_GAME" }
   | { type: "OPEN_DIFFICULTY_SELECT" }

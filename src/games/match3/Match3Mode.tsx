@@ -206,7 +206,7 @@ export function Match3Mode({
 
       onFinish({
         status: "win",
-        title: "开心消消乐胜利",
+        title: "角落消消胜利",
         description: `你在 ${config.moveLimit - movesLeft} 步内完成了${difficulty === "hard" ? "困难模式" : "简单模式"}的目标分数。`,
         settlement,
       });
@@ -218,7 +218,7 @@ export function Match3Mode({
 
       onFinish({
         status: "lose",
-        title: "开心消消乐失败",
+        title: "角落消消失败",
         description: `步数已经用完，当前分数 ${score}，目标分数 ${config.targetScore}。`,
         settlement: {
           baseScore: score,
@@ -366,7 +366,7 @@ export function Match3Mode({
       <header className="mode-header">
         <div>
           <p className="mode-kicker">三消 / {difficultyText}</p>
-          <h2>开心消消乐 - {difficultyText}模式</h2>
+          <h2>角落消消 - {difficultyText}模式</h2>
         </div>
         <div className="mode-badge-group">
           <span>运行编号 #{session.runId}</span>

@@ -67,7 +67,7 @@ describe("appReducer match3 flow", () => {
     expect(resultState.fragments.leaf).toBe(0);
   });
 
-  it("redeems a character and converts extra fragments over 200 into coins", () => {
+  it("stores all earned fragments and converts every extra 20 over 200 into coins", () => {
     const state = createMatch3GameState();
 
     const resultState = appReducer(state, {
@@ -113,7 +113,7 @@ describe("appReducer match3 flow", () => {
     });
 
     expect(resultState.coins).toBe(32);
-    expect(resultState.fragments.sun).toBe(5);
+    expect(resultState.fragments.sun).toBe(245);
     expect(resultState.collectedCharacters.sun).toBe(1);
   });
 
@@ -249,7 +249,7 @@ describe("appReducer match3 flow", () => {
 
     state = appReducer(state, { type: "RESET_NEW_GAME" });
 
-    expect(state.scene).toBe("home");
+    expect(state.scene).toBe("landing");
     expect(state.coins).toBe(10);
     expect(state.session).toBeNull();
     expect(state.fragments.sun).toBe(0);

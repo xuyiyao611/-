@@ -32,8 +32,8 @@ export function GamePage({
   return (
     <PageFrame
       eyebrow="P2 玩法入口"
-      title="游戏场景容器"
-      description={`当前已进入 ${gameLabel} / ${difficultyLabel}。这一层负责把全局金币与单局三消玩法接通。`}
+      title={`${gameLabel} 游戏中`}
+      description={`当前已进入 ${gameLabel} / ${difficultyLabel}，这一层负责把全局金币与单局三消玩法接通。`}
     >
       <div className="status-strip">
         <span>玩法：{gameLabel}</span>

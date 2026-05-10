@@ -2,6 +2,7 @@ import { useMemo, useReducer } from "react";
 import { DifficultySelectPage } from "@/pages/difficulty-select/DifficultySelectPage";
 import { GamePage } from "@/pages/game/GamePage";
 import { HomePage } from "@/pages/home/HomePage";
+import { LandingPage } from "@/pages/landing/LandingPage";
 import { ResultPage } from "@/pages/result/ResultPage";
 import { difficultyLabels, gameTypeLabels } from "@/shared/config/gameCatalog";
 import type { AppState } from "@/shared/types/app";
@@ -38,6 +39,15 @@ export function App() {
 
     return state;
   }, [state]);
+
+  if (safeState.scene === "landing") {
+    return (
+      <LandingPage
+        onStart={() => dispatch({ type: "ENTER_HOME" })}
+        onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
+      />
+    );
+  }
 
   if (safeState.scene === "home") {
     return (
@@ -112,20 +122,9 @@ export function App() {
   }
 
   return (
-    <HomePage
-      coins={safeState.coins}
-      fragments={safeState.fragments}
-      collectedCharacters={safeState.collectedCharacters}
-      affection={safeState.affection}
-      breakthroughs={safeState.breakthroughs}
-      foods={safeState.foods}
-      onStart={() => dispatch({ type: "OPEN_DIFFICULTY_SELECT" })}
+    <LandingPage
+      onStart={() => dispatch({ type: "ENTER_HOME" })}
       onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
-      onBuyFood={(foodType) => dispatch({ type: "BUY_FOOD", payload: foodType })}
-      onFeedCharacter={(kind, foodType) =>
-        dispatch({ type: "FEED_CHARACTER", payload: { kind, foodType } })
-      }
-      onBreakthrough={(kind) => dispatch({ type: "BREAKTHROUGH_CHARACTER", payload: kind })}
     />
   );
 }

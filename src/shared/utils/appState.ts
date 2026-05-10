@@ -95,14 +95,19 @@ function applyFragmentRewards(
   let bonusCoins = 0;
 
   for (const kind of allTileKinds) {
-    const total = nextFragments[kind] + gains[kind];
-    const redeemedCount = Math.floor(total / FRAGMENTS_PER_CHARACTER);
-    const remainderAfterCharacters = total % FRAGMENTS_PER_CHARACTER;
-    const coinCount = Math.floor(remainderAfterCharacters / FRAGMENTS_PER_BONUS_COIN);
+    const previousTotal = currentFragments[kind];
+    const nextTotal = previousTotal + gains[kind];
+    const previousBonusCoins = Math.floor(
+      Math.max(previousTotal - FRAGMENTS_PER_CHARACTER, 0) / FRAGMENTS_PER_BONUS_COIN,
+    );
+    const nextBonusCoins = Math.floor(
+      Math.max(nextTotal - FRAGMENTS_PER_CHARACTER, 0) / FRAGMENTS_PER_BONUS_COIN,
+    );
 
-    bonusCoins += coinCount;
-    nextFragments[kind] = remainderAfterCharacters % FRAGMENTS_PER_BONUS_COIN;
-    nextCollection[kind] += redeemedCount;
+    nextFragments[kind] = nextTotal;
+    nextCollection[kind] =
+      currentCollection[kind] > 0 || nextTotal >= FRAGMENTS_PER_CHARACTER ? 1 : 0;
+    bonusCoins += nextBonusCoins - previousBonusCoins;
   }
 
   return {
@@ -114,7 +119,7 @@ function applyFragmentRewards(
 
 export function createInitialAppState(): AppState {
   return {
-    scene: "home",
+    scene: "landing",
     gameType: null,
     difficulty: null,
     result: null,
@@ -130,6 +135,14 @@ export function createInitialAppState(): AppState {
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
+    case "ENTER_HOME":
+      return {
+        ...state,
+        scene: "home",
+        result: null,
+        session: null,
+        difficulty: null,
+      };
     case "GO_HOME":
       return {
         ...state,
