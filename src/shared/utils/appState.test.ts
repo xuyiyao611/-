@@ -67,7 +67,7 @@ describe("appReducer match3 flow", () => {
     expect(resultState.fragments.leaf).toBe(0);
   });
 
-  it("redeems a character every 200 fragments on win", () => {
+  it("redeems a character and converts extra fragments over 200 into coins", () => {
     const state = createMatch3GameState();
 
     const resultState = appReducer(state, {
@@ -88,7 +88,7 @@ describe("appReducer match3 flow", () => {
           explodedTileCount: 0,
           activatedSpecialCount: 0,
           clearedElements: {
-            sun: 205,
+            sun: 245,
             leaf: 0,
             drop: 0,
             berry: 0,
@@ -98,7 +98,7 @@ describe("appReducer match3 flow", () => {
             puff: 0,
           },
           fragmentGains: {
-            sun: 205,
+            sun: 245,
             leaf: 0,
             drop: 0,
             berry: 0,
@@ -112,12 +112,12 @@ describe("appReducer match3 flow", () => {
       },
     });
 
-    expect(resultState.coins).toBe(30);
+    expect(resultState.coins).toBe(32);
     expect(resultState.fragments.sun).toBe(5);
     expect(resultState.collectedCharacters.sun).toBe(1);
   });
 
-  it("buys food and feeds an unlocked character", () => {
+  it("buys favorite food and grants +3 affection for preferred feeding", () => {
     let state = createMatch3GameState();
 
     state = appReducer(state, {
@@ -162,18 +162,83 @@ describe("appReducer match3 flow", () => {
       },
     });
 
-    state = appReducer(state, { type: "BUY_FOOD", payload: "pudding" });
+    state = appReducer(state, { type: "BUY_FOOD", payload: "popsicle" });
 
-    expect(state.coins).toBe(20);
-    expect(state.foods.pudding).toBe(1);
+    expect(state.coins).toBe(0);
+    expect(state.foods.popsicle).toBe(1);
 
     state = appReducer(state, {
       type: "FEED_CHARACTER",
-      payload: { kind: "sun", foodType: "pudding" },
+      payload: { kind: "sun", foodType: "popsicle" },
     });
 
-    expect(state.foods.pudding).toBe(0);
-    expect(state.affection.sun).toBe(1);
+    expect(state.foods.popsicle).toBe(0);
+    expect(state.affection.sun).toBe(3);
+  });
+
+  it("unlocks breakthrough after affection reaches 20", () => {
+    let state = createMatch3GameState();
+
+    state = appReducer(state, {
+      type: "FINISH_GAME",
+      payload: {
+        status: "win",
+        title: "开心消消乐胜利",
+        description: "测试突破前置",
+        settlement: {
+          baseScore: 3000,
+          moveBonusScore: 0,
+          specialBonusScore: 0,
+          finalScore: 3000,
+          coinReward: 30,
+          rewardGranted: true,
+          remainingMoves: 0,
+          remainingSpecialTiles: 0,
+          explodedTileCount: 0,
+          activatedSpecialCount: 0,
+          clearedElements: {
+            sun: 200,
+            leaf: 0,
+            drop: 0,
+            berry: 0,
+            star: 0,
+            candy: 0,
+            sprout: 0,
+            puff: 0,
+          },
+          fragmentGains: {
+            sun: 200,
+            leaf: 0,
+            drop: 0,
+            berry: 0,
+            star: 0,
+            candy: 0,
+            sprout: 0,
+            puff: 0,
+          },
+          selectedTileKinds: ["sun", "leaf", "drop", "berry", "star", "candy"],
+        },
+      },
+    });
+
+    state = {
+      ...state,
+      coins: 400,
+    };
+
+    for (let i = 0; i < 7; i += 1) {
+      state = appReducer(state, { type: "BUY_FOOD", payload: "popsicle" });
+      state = appReducer(state, {
+        type: "FEED_CHARACTER",
+        payload: { kind: "sun", foodType: "popsicle" },
+      });
+    }
+
+    expect(state.affection.sun).toBe(21);
+
+    state = appReducer(state, { type: "BREAKTHROUGH_CHARACTER", payload: "sun" });
+
+    expect(state.breakthroughs.sun).toBe(true);
   });
 
   it("spends coins and can reset to a new game", () => {
@@ -191,5 +256,6 @@ describe("appReducer match3 flow", () => {
     expect(state.collectedCharacters.sun).toBe(0);
     expect(state.foods.pudding).toBe(0);
     expect(state.affection.sun).toBe(0);
+    expect(state.breakthroughs.sun).toBe(false);
   });
 });

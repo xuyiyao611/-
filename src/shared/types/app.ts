@@ -15,6 +15,7 @@ export type FragmentInventory = Record<TileKind, number>;
 export type CharacterCollection = Record<TileKind, number>;
 export type AffectionStats = Record<TileKind, number>;
 export type FoodInventory = Record<FoodType, number>;
+export type CharacterBreakthrough = Record<TileKind, boolean>;
 
 export type RewardSettlement = {
   baseScore: number;
@@ -50,6 +51,7 @@ export type AppState = {
   collectedCharacters: CharacterCollection;
   affection: AffectionStats;
   foods: FoodInventory;
+  breakthroughs: CharacterBreakthrough;
 };
 
 export type AppAction =
@@ -62,4 +64,5 @@ export type AppAction =
   | { type: "BACK_TO_DIFFICULTY_SELECT" }
   | { type: "SPEND_COINS"; payload: number }
   | { type: "BUY_FOOD"; payload: FoodType }
-  | { type: "FEED_CHARACTER"; payload: { kind: TileKind; foodType: FoodType } };
+  | { type: "FEED_CHARACTER"; payload: { kind: TileKind; foodType: FoodType } }
+  | { type: "BREAKTHROUGH_CHARACTER"; payload: TileKind };

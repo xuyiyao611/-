@@ -14,6 +14,6 @@ export const gameTypeDescriptions: Record<GameType, string> = {
 };
 
 export const difficultyDescriptions: Record<Difficulty, string> = {
-  easy: "目标分数更低，刷新白熊、鼹鼠、蜥蜴、企鹅、幽灵、猫咪 6 类元素。",
-  hard: "目标分数更高，刷新蜥蜴、企鹅、幽灵、猫咪、企鹅？、炸虾尾 6 类元素。",
+  easy: "目标分数更低，刷新白熊、鼹鼠、水龙、企鹅、幽灵、猫咪 6 类元素。",
+  hard: "目标分数更高，刷新水龙、企鹅、幽灵、猫咪、企鹅？、炸虾尾 6 类元素。",
 };

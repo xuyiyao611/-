@@ -46,6 +46,7 @@ export function App() {
         fragments={safeState.fragments}
         collectedCharacters={safeState.collectedCharacters}
         affection={safeState.affection}
+        breakthroughs={safeState.breakthroughs}
         foods={safeState.foods}
         onStart={() => dispatch({ type: "OPEN_DIFFICULTY_SELECT" })}
         onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
@@ -53,6 +54,7 @@ export function App() {
         onFeedCharacter={(kind, foodType) =>
           dispatch({ type: "FEED_CHARACTER", payload: { kind, foodType } })
         }
+        onBreakthrough={(kind) => dispatch({ type: "BREAKTHROUGH_CHARACTER", payload: kind })}
       />
     );
   }
@@ -115,6 +117,7 @@ export function App() {
       fragments={safeState.fragments}
       collectedCharacters={safeState.collectedCharacters}
       affection={safeState.affection}
+      breakthroughs={safeState.breakthroughs}
       foods={safeState.foods}
       onStart={() => dispatch({ type: "OPEN_DIFFICULTY_SELECT" })}
       onNewGame={() => dispatch({ type: "RESET_NEW_GAME" })}
@@ -122,6 +125,7 @@ export function App() {
       onFeedCharacter={(kind, foodType) =>
         dispatch({ type: "FEED_CHARACTER", payload: { kind, foodType } })
       }
+      onBreakthrough={(kind) => dispatch({ type: "BREAKTHROUGH_CHARACTER", payload: kind })}
     />
   );
 }

@@ -27,7 +27,7 @@ describe("App shell", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "简单模式 目标分数更低，刷新白熊、鼹鼠、蜥蜴、企鹅、幽灵、猫咪 6 类元素。",
+        name: "简单模式 目标分数更低，刷新白熊、鼹鼠、水龙、企鹅、幽灵、猫咪 6 类元素。",
       }),
     );
 

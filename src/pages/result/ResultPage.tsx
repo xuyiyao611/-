@@ -59,7 +59,9 @@ export function ResultPage({
 
           {!result.settlement.rewardGranted ? (
             <p className="reward-note">本局未通关，因此不会发放金币和碎片奖励。</p>
-          ) : null}
+          ) : (
+            <p className="reward-note">角色兑换后，多出的碎片会按每 20 个自动转化为 1 金币。</p>
+          )}
 
           <div className="reward-breakdown">
             <article className="reward-line-item">
