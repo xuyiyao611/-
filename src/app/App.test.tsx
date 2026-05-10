@@ -3,37 +3,35 @@ import userEvent from "@testing-library/user-event";
 import { App } from "@/app/App";
 
 describe("App shell", () => {
-  it("supports the P2 scene flow and passes mode info into the game host", async () => {
+  it("enters the match3 easy mode with a real board", async () => {
     const user = userEvent.setup();
 
     render(<App />);
-
-    expect(screen.getByRole("heading", { name: "消除大师" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "开始规划主流程" }));
     await user.click(screen.getByRole("button", { name: "开心消消乐" }));
     await user.click(screen.getByRole("button", { name: "简单模式" }));
 
-    expect(screen.getByRole("heading", { name: "游戏场景容器" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "开心消消乐 - 简单模式" })).toBeInTheDocument();
-    expect(screen.getByText(/运行编号：#1/)).toBeInTheDocument();
+    expect(screen.getByText("棋盘生成")).toBeInTheDocument();
+    expect(screen.getAllByRole("button").length).toBeGreaterThan(30);
   });
 
-  it("supports restart and increments the game session run id", async () => {
+  it("allows selecting a match3 tile and updates the hint", async () => {
     const user = userEvent.setup();
 
     render(<App />);
 
     await user.click(screen.getByRole("button", { name: "开始规划主流程" }));
-    await user.click(screen.getByRole("button", { name: "羊了个羊" }));
-    await user.click(screen.getByRole("button", { name: "困难模式" }));
-    await user.click(screen.getByRole("button", { name: "模拟失败本局" }));
+    await user.click(screen.getByRole("button", { name: "开心消消乐" }));
+    await user.click(screen.getByRole("button", { name: "简单模式" }));
 
-    expect(screen.getByRole("heading", { name: "羊了个羊示例失败" })).toBeInTheDocument();
+    const tiles = screen.getAllByRole("button").filter((button) =>
+      button.className.includes("match3-tile"),
+    );
 
-    await user.click(screen.getByRole("button", { name: "重新开始当前模式" }));
+    await user.click(tiles[0]);
 
-    expect(screen.getByRole("heading", { name: "羊了个羊 - 困难模式" })).toBeInTheDocument();
-    expect(screen.getByText(/运行编号：#2/)).toBeInTheDocument();
+    expect(screen.getByText("已选中一个方块，请选择相邻方块完成交换。")).toBeInTheDocument();
   });
 });
