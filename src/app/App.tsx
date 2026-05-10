@@ -1,81 +1,94 @@
-import { useState } from "react";
-import { HomePage } from "@/pages/home/HomePage";
-import { ModeSelectPage } from "@/pages/mode-select/ModeSelectPage";
+import { useMemo, useReducer } from "react";
 import { DifficultySelectPage } from "@/pages/difficulty-select/DifficultySelectPage";
 import { GamePage } from "@/pages/game/GamePage";
+import { HomePage } from "@/pages/home/HomePage";
+import { ModeSelectPage } from "@/pages/mode-select/ModeSelectPage";
 import { ResultPage } from "@/pages/result/ResultPage";
-import type { Difficulty, GameType, ResultPayload, SceneKey } from "@/shared/types/app";
+import { difficultyLabels, gameTypeLabels } from "@/shared/config/gameCatalog";
+import type { AppState } from "@/shared/types/app";
+import { appReducer, createInitialAppState } from "@/shared/utils/appState";
 
 export function App() {
-  const [scene, setScene] = useState<SceneKey>("home");
-  const [gameType, setGameType] = useState<GameType | null>(null);
-  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
-  const [result, setResult] = useState<ResultPayload | null>(null);
+  const [state, dispatch] = useReducer(appReducer, undefined, createInitialAppState);
 
-  if (scene === "home") {
-    return <HomePage onStart={() => setScene("modeSelect")} />;
+  const safeState = useMemo<AppState>(() => {
+    if (state.scene === "difficultySelect" && !state.gameType) {
+      return {
+        ...state,
+        scene: "modeSelect",
+      };
+    }
+
+    if (state.scene === "game" && (!state.gameType || !state.difficulty)) {
+      return {
+        ...state,
+        scene: state.gameType ? "difficultySelect" : "modeSelect",
+      };
+    }
+
+    if (state.scene === "result" && (!state.gameType || !state.difficulty || !state.result)) {
+      return {
+        ...state,
+        scene: state.gameType ? "difficultySelect" : "home",
+      };
+    }
+
+    return state;
+  }, [state]);
+
+  if (safeState.scene === "home") {
+    return <HomePage onStart={() => dispatch({ type: "OPEN_MODE_SELECT" })} />;
   }
 
-  if (scene === "modeSelect") {
+  if (safeState.scene === "modeSelect") {
     return (
       <ModeSelectPage
-        onBack={() => setScene("home")}
-        onSelect={(nextGameType) => {
-          setGameType(nextGameType);
-          setDifficulty(null);
-          setScene("difficultySelect");
-        }}
+        selectedGameType={safeState.gameType}
+        onBack={() => dispatch({ type: "GO_HOME" })}
+        onSelect={(gameType) => dispatch({ type: "SELECT_GAME_TYPE", payload: gameType })}
       />
     );
   }
 
-  if (scene === "difficultySelect") {
+  if (safeState.scene === "difficultySelect") {
     return (
       <DifficultySelectPage
-        gameType={gameType}
-        onBack={() => setScene("modeSelect")}
-        onSelect={(nextDifficulty) => {
-          setDifficulty(nextDifficulty);
-          setScene("game");
-        }}
+        gameType={safeState.gameType}
+        selectedDifficulty={safeState.difficulty}
+        onBack={() => dispatch({ type: "OPEN_MODE_SELECT" })}
+        onSelect={(difficulty) => dispatch({ type: "SELECT_DIFFICULTY", payload: difficulty })}
       />
     );
   }
 
-  if (scene === "game") {
+  if (safeState.scene === "game" && safeState.gameType && safeState.difficulty) {
     return (
       <GamePage
-        gameType={gameType}
-        difficulty={difficulty}
-        onBackHome={() => {
-          setGameType(null);
-          setDifficulty(null);
-          setResult(null);
-          setScene("home");
-        }}
-        onFinish={(nextResult) => {
-          setResult(nextResult);
-          setScene("result");
-        }}
+        gameType={safeState.gameType}
+        difficulty={safeState.difficulty}
+        onBackHome={() => dispatch({ type: "GO_HOME" })}
+        onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
+        onFinish={(result) => dispatch({ type: "FINISH_GAME", payload: result })}
       />
     );
   }
 
-  return (
-    <ResultPage
-      result={result}
-      onRestart={() => setScene("game")}
-      onBackHome={() => {
-        setGameType(null);
-        setDifficulty(null);
-        setResult(null);
-        setScene("home");
-      }}
-      onBackModeSelect={() => {
-        setDifficulty(null);
-        setResult(null);
-        setScene("modeSelect");
-      }}
-    />
-  );
+  if (
+    safeState.scene === "result" &&
+    safeState.result &&
+    safeState.gameType &&
+    safeState.difficulty
+  ) {
+    return (
+      <ResultPage
+        result={safeState.result}
+        summary={`${gameTypeLabels[safeState.gameType]} / ${difficultyLabels[safeState.difficulty]}`}
+        onRestart={() => dispatch({ type: "RESTART_GAME" })}
+        onBackHome={() => dispatch({ type: "GO_HOME" })}
+        onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
+      />
+    );
+  }
+
+  return <HomePage onStart={() => dispatch({ type: "OPEN_MODE_SELECT" })} />;
 }

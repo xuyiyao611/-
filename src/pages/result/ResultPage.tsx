@@ -1,7 +1,9 @@
+import { PageFrame } from "@/components/PageFrame";
 import type { ResultPayload } from "@/shared/types/app";
 
 type ResultPageProps = {
-  result: ResultPayload | null;
+  result: ResultPayload;
+  summary: string;
   onRestart: () => void;
   onBackHome: () => void;
   onBackModeSelect: () => void;
@@ -9,29 +11,36 @@ type ResultPageProps = {
 
 export function ResultPage({
   result,
+  summary,
   onRestart,
   onBackHome,
   onBackModeSelect,
 }: ResultPageProps) {
   return (
-    <main className="page-shell">
-      <section className="panel">
-        <p className="eyebrow">P0 骨架页</p>
-        <h2>{result?.title ?? "结果页"}</h2>
-        <p className="lead">{result?.description ?? "当前结果信息为空。"}</p>
-        <p className="hint-text">状态：{result?.status === "win" ? "胜利" : "失败"}</p>
-        <div className="button-grid">
-          <button className="primary-button" onClick={onRestart} type="button">
-            重新开始
-          </button>
-          <button className="secondary-button" onClick={onBackModeSelect} type="button">
-            返回玩法选择
-          </button>
-        </div>
+    <PageFrame
+      eyebrow="P1 结果容器"
+      title={result.title}
+      description={result.description}
+    >
+      <div className={`result-banner${result.status === "win" ? " result-win" : " result-lose"}`}>
+        <strong>{result.status === "win" ? "结果：胜利" : "结果：失败"}</strong>
+        <span>{summary}</span>
+      </div>
+
+      <div className="button-grid">
+        <button className="primary-button" onClick={onRestart} type="button">
+          重新开始当前模式
+        </button>
+        <button className="secondary-button" onClick={onBackModeSelect} type="button">
+          返回玩法选择
+        </button>
+      </div>
+
+      <div className="button-row">
         <button className="ghost-button" onClick={onBackHome} type="button">
           返回首页
         </button>
-      </section>
-    </main>
+      </div>
+    </PageFrame>
   );
 }
