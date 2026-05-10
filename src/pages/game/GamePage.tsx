@@ -10,6 +10,7 @@ type GamePageProps = {
   difficulty: Difficulty;
   onBackHome: () => void;
   onBackModeSelect: () => void;
+  onBackDifficultySelect: () => void;
   onFinish: (payload: ResultPayload) => void;
 };
 
@@ -19,6 +20,7 @@ export function GamePage({
   difficulty,
   onBackHome,
   onBackModeSelect,
+  onBackDifficultySelect,
   onFinish,
 }: GamePageProps) {
   const gameLabel = gameTypeLabels[gameType];
@@ -33,7 +35,7 @@ export function GamePage({
       <div className="status-strip">
         <span>玩法：{gameLabel}</span>
         <span>难度：{difficultyLabel}</span>
-        <span>运行编号：#{session.runId}</span>
+        <span>运行编号：{session.runId}</span>
       </div>
 
       <GameHost
@@ -43,10 +45,16 @@ export function GamePage({
         onFinish={onFinish}
       />
 
-      <div className="button-row">
+      <div className="button-grid">
+        <button className="ghost-button" onClick={onBackDifficultySelect} type="button">
+          返回难度选择
+        </button>
         <button className="ghost-button" onClick={onBackModeSelect} type="button">
           返回玩法选择
         </button>
+      </div>
+
+      <div className="button-row">
         <button className="ghost-button" onClick={onBackHome} type="button">
           返回首页
         </button>

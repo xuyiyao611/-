@@ -1,12 +1,19 @@
-import { useEffect, useRef, useState } from "react";
-import { sheepEasyConfig } from "@/games/sheep/sheepConfig";
-import { allCardsCleared, cloneCards, isCardBlocked, removeTrayTriples } from "@/games/sheep/sheepLogic";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { sheepConfigs } from "@/games/sheep/sheepConfig";
+import {
+  createCardsForBoard,
+  createTraySlots,
+  getGameOutcome,
+  isCardBlocked,
+  moveCardToTray,
+} from "@/games/sheep/sheepLogic";
 import type { SheepCard, SheepKind } from "@/games/sheep/sheepTypes";
-import type { ResultPayload } from "@/shared/types/app";
+import type { Difficulty, ResultPayload } from "@/shared/types/app";
 import type { GameSession } from "@/shared/types/session";
 
 type SheepModeProps = {
   session: GameSession;
+  difficulty: Difficulty;
   onFinish: (payload: ResultPayload) => void;
 };
 
@@ -17,114 +24,116 @@ const kindLabels: Record<SheepKind, string> = {
   gem: "GEM",
 };
 
-export function SheepMode({ session, onFinish }: SheepModeProps) {
-  const [cards, setCards] = useState<SheepCard[]>(() => cloneCards(sheepEasyConfig.cards));
-  const [trayIds, setTrayIds] = useState<string[]>([]);
-  const [statusText, setStatusText] = useState("只能点击未被遮挡的卡牌，凑齐三个相同卡牌即可消除。");
+const defaultHint = "只能拿取当前未被遮挡的顶层卡牌，凑齐三张相同卡牌会自动消除。";
+
+export function SheepMode({ session, difficulty, onFinish }: SheepModeProps) {
+  const config = sheepConfigs[difficulty];
+  const [cards, setCards] = useState<SheepCard[]>(() => createCardsForBoard(config));
+  const [trayCardIds, setTrayCardIds] = useState<string[]>([]);
+  const [statusText, setStatusText] = useState(defaultHint);
   const finishedRef = useRef(false);
 
+  const boardCards = useMemo(() => cards.filter((card) => card.status === "board"), [cards]);
+  const trayCards = useMemo(
+    () =>
+      trayCardIds
+        .map((id) => cards.find((card) => card.id === id))
+        .filter((card): card is SheepCard => Boolean(card)),
+    [cards, trayCardIds],
+  );
+  const traySlots = useMemo(() => createTraySlots(config.slotLimit, trayCardIds), [config.slotLimit, trayCardIds]);
+
   useEffect(() => {
-    setCards(cloneCards(sheepEasyConfig.cards));
-    setTrayIds([]);
-    setStatusText("只能点击未被遮挡的卡牌，凑齐三个相同卡牌即可消除。");
+    setCards(createCardsForBoard(config));
+    setTrayCardIds([]);
+    setStatusText(defaultHint);
     finishedRef.current = false;
-  }, [session.runId]);
+  }, [config, session.runId]);
 
   useEffect(() => {
     if (finishedRef.current) {
       return;
     }
 
-    if (allCardsCleared(cards)) {
+    const outcome = getGameOutcome(cards, trayCardIds, config.slotLimit);
+    if (outcome === "win") {
       finishedRef.current = true;
       onFinish({
         status: "win",
         title: "羊了个羊胜利",
-        description: `你成功清空了所有卡牌，剩余槽位 ${sheepEasyConfig.slotLimit - trayIds.length}。`,
+        description: `你成功清空了全部卡牌，剩余槽位 ${config.slotLimit - trayCardIds.length}。`,
       });
       return;
     }
 
-    if (trayIds.length >= sheepEasyConfig.slotLimit) {
+    if (outcome === "lose") {
       finishedRef.current = true;
       onFinish({
         status: "lose",
         title: "羊了个羊失败",
-        description: "槽位已满，且没有及时凑成三个相同卡牌。",
+        description: "槽位已满，还没来得及凑成三张相同卡牌。",
       });
     }
-  }, [cards, onFinish, trayIds.length]);
+  }, [cards, config.slotLimit, onFinish, trayCardIds]);
 
   function handleCardClick(cardId: string) {
     if (finishedRef.current) {
       return;
     }
 
-    if (isCardBlocked(cards, cardId)) {
-      setStatusText("这张卡牌还被上层遮挡，暂时不能点击。");
+    const resolved = moveCardToTray(cards, trayCardIds, cardId);
+    if (resolved.failureReason === "blocked") {
+      setStatusText("这张牌当前仍被其他牌堆挡住，需要先拆掉上方或相邻压住它的卡牌。");
       return;
     }
 
-    const nextCards = cards.map((card) =>
-      card.id === cardId
-        ? {
-            ...card,
-            status: "tray" as const,
-          }
-        : card,
-    );
+    if (resolved.failureReason === "unavailable") {
+      setStatusText("这张牌已经进入槽位或已被消除，本回合不能重复操作。");
+      return;
+    }
 
-    const nextTrayIds = [...trayIds, cardId];
-    const resolved = removeTrayTriples(nextCards, nextTrayIds);
+    if (resolved.failureReason === "missing") {
+      setStatusText("未找到目标卡牌，本次点击已忽略。");
+      return;
+    }
 
     setCards(resolved.cards);
-    setTrayIds(resolved.trayIds);
+    setTrayCardIds(resolved.trayCardIds);
 
     if (resolved.clearedCount > 0) {
-      setStatusText(`成功消除了 ${resolved.clearedKinds.join(" / ")} 组合。`);
+      setStatusText(`已消除 ${resolved.clearedKinds.join(" / ")} 组合，继续拆解上层卡牌。`);
       return;
     }
 
-    setStatusText(`卡牌已进入槽位，当前已占用 ${resolved.trayIds.length} / ${sheepEasyConfig.slotLimit}。`);
+    setStatusText(`卡牌已进入槽位，当前占用 ${resolved.trayCardIds.length} / ${config.slotLimit}。`);
   }
-
-  const boardCards = cards.filter((card) => card.status === "board");
-  const trayCards = trayIds
-    .map((id) => cards.find((card) => card.id === id))
-    .filter((card): card is SheepCard => Boolean(card));
 
   return (
     <section className="mode-shell">
       <header className="mode-header">
         <div>
-          <p className="mode-kicker">卡牌 / 简单</p>
-          <h2>羊了个羊 - 简单模式</h2>
+          <p className="mode-kicker">卡牌 / {difficulty === "easy" ? "简单" : "困难"}</p>
+          <h2>羊了个羊 - {config.title}</h2>
         </div>
         <div className="mode-badge-group">
           <span>运行编号 #{session.runId}</span>
-          <span>槽位上限 {sheepEasyConfig.slotLimit}</span>
+          <span>槽位上限 {config.slotLimit}</span>
           <span>剩余卡牌 {boardCards.length}</span>
         </div>
       </header>
 
       <div className="mode-grid">
         <article className="mode-card">
-          <h3>本阶段已接入</h3>
-          <ul className="mode-list">
-            <li>卡牌层级布局</li>
-            <li>遮挡判定</li>
-            <li>点击入槽</li>
-            <li>三张相同卡牌自动消除</li>
-            <li>槽位满失败 / 全清胜利</li>
-          </ul>
+          <h3>布局目标</h3>
+          <p>{config.intro}</p>
         </article>
         <article className="mode-card">
           <h3>当前规则</h3>
           <ul className="mode-list">
-            <li>只能点击未被遮挡的卡牌</li>
-            <li>卡牌点击后进入下方槽位</li>
-            <li>槽位中凑齐三个相同卡牌会自动消除</li>
-            <li>槽位达到上限即失败</li>
+            <li>卡牌分布在不同区域，区域之间会形成交叉遮挡。</li>
+            <li>每个牌堆只能先取最顶层的卡牌。</li>
+            <li>被其他卡牌压住的牌不能直接拿取。</li>
+            <li>凑齐三张相同卡牌会自动消除。</li>
           </ul>
         </article>
       </div>
@@ -133,13 +142,21 @@ export function SheepMode({ session, onFinish }: SheepModeProps) {
         <div className="status-strip">
           <span>剩余卡牌 {boardCards.length}</span>
           <span className="status-pill-strong">
-            槽位 {trayCards.length} / {sheepEasyConfig.slotLimit}
+            槽位 {trayCards.length} / {config.slotLimit}
           </span>
+          <span>区域数量 {config.zones.length}</span>
         </div>
         <p className="match3-hint">{statusText}</p>
       </div>
 
-      <div className="sheep-board">
+      <div
+        className={`sheep-board sheep-board-${difficulty}`}
+        style={{
+          width: `${config.boardWidth}px`,
+          minHeight: `${config.boardHeight}px`,
+        }}
+      >
+        <div className="sheep-board-glow" />
         {boardCards.map((card) => {
           const blocked = isCardBlocked(cards, card.id);
 
@@ -150,12 +167,16 @@ export function SheepMode({ session, onFinish }: SheepModeProps) {
               className={`sheep-card sheep-${card.kind}${blocked ? " sheep-card-blocked" : " sheep-card-open"}`}
               onClick={() => handleCardClick(card.id)}
               style={{
-                left: `${card.x * 72}px`,
-                top: `${card.y * 92}px`,
-                zIndex: card.layer * 10 + Math.round(card.x),
+                left: `${card.x}px`,
+                top: `${card.y}px`,
+                width: `${config.cardWidth}px`,
+                height: `${config.cardHeight}px`,
+                zIndex: card.depth * 20 + Math.round(card.y),
+                transform: `rotate(${card.tilt}deg)`,
               }}
               type="button"
             >
+              <span className="sheep-card-face" />
               <span className="sheep-card-label">{kindLabels[card.kind]}</span>
             </button>
           );
@@ -163,13 +184,14 @@ export function SheepMode({ session, onFinish }: SheepModeProps) {
       </div>
 
       <div className="sheep-tray">
-        {Array.from({ length: sheepEasyConfig.slotLimit }, (_, index) => {
-          const card = trayCards[index];
+        {traySlots.map((slot) => {
+          const card = slot.cardId ? cards.find((item) => item.id === slot.cardId) : null;
 
           return (
-            <div key={`tray-slot-${index}`} className="sheep-tray-slot">
+            <div key={`tray-slot-${slot.index}`} className="sheep-tray-slot">
               {card ? (
                 <div className={`sheep-tray-card sheep-${card.kind}`}>
+                  <span className="sheep-card-face" />
                   <span className="sheep-card-label">{kindLabels[card.kind]}</span>
                 </div>
               ) : (

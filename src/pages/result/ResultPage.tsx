@@ -7,6 +7,7 @@ type ResultPageProps = {
   onRestart: () => void;
   onBackHome: () => void;
   onBackModeSelect: () => void;
+  onBackDifficultySelect: () => void;
 };
 
 export function ResultPage({
@@ -15,6 +16,7 @@ export function ResultPage({
   onRestart,
   onBackHome,
   onBackModeSelect,
+  onBackDifficultySelect,
 }: ResultPageProps) {
   return (
     <PageFrame
@@ -30,6 +32,9 @@ export function ResultPage({
       <div className="button-grid">
         <button className="primary-button" onClick={onRestart} type="button">
           重新开始当前模式
+        </button>
+        <button className="secondary-button" onClick={onBackDifficultySelect} type="button">
+          返回难度选择
         </button>
         <button className="secondary-button" onClick={onBackModeSelect} type="button">
           返回玩法选择

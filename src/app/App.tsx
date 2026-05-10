@@ -77,6 +77,7 @@ export function App() {
         difficulty={safeState.difficulty}
         onBackHome={() => dispatch({ type: "GO_HOME" })}
         onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
+        onBackDifficultySelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
         onFinish={(result) => dispatch({ type: "FINISH_GAME", payload: result })}
       />
     );
@@ -96,6 +97,7 @@ export function App() {
         onRestart={() => dispatch({ type: "RESTART_GAME" })}
         onBackHome={() => dispatch({ type: "GO_HOME" })}
         onBackModeSelect={() => dispatch({ type: "BACK_TO_MODE_SELECT" })}
+        onBackDifficultySelect={() => dispatch({ type: "BACK_TO_DIFFICULTY_SELECT" })}
       />
     );
   }

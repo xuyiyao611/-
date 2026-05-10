@@ -94,6 +94,21 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         session: null,
         scene: "modeSelect",
       };
+    case "BACK_TO_DIFFICULTY_SELECT":
+      if (!state.gameType) {
+        return {
+          ...state,
+          scene: "modeSelect",
+        };
+      }
+
+      return {
+        ...state,
+        difficulty: null,
+        result: null,
+        session: null,
+        scene: "difficultySelect",
+      };
     default:
       return state;
   }

@@ -29,4 +29,5 @@ export type AppAction =
   | { type: "SELECT_DIFFICULTY"; payload: Difficulty }
   | { type: "FINISH_GAME"; payload: ResultPayload }
   | { type: "RESTART_GAME" }
-  | { type: "BACK_TO_MODE_SELECT" };
+  | { type: "BACK_TO_MODE_SELECT" }
+  | { type: "BACK_TO_DIFFICULTY_SELECT" };

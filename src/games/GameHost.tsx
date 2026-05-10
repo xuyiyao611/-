@@ -16,8 +16,8 @@ export function GameHost({ session, gameType, difficulty, onFinish }: GameHostPr
     return <Match3ModeStub session={session} difficulty={difficulty} onFinish={onFinish} />;
   }
 
-  if (difficulty === "easy") {
-    return <SheepMode session={session} onFinish={onFinish} />;
+  if (difficulty === "easy" || difficulty === "hard") {
+    return <SheepMode session={session} difficulty={difficulty} onFinish={onFinish} />;
   }
 
   return <SheepModeStub session={session} difficulty={difficulty} onFinish={onFinish} />;
