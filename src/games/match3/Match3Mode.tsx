@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import { getMatch3Config } from "@/games/match3/match3Config";
-import { applyMove, createPlayableBoard } from "@/games/match3/match3Logic";
-import type { Match3Position, Match3Tile, TileKind } from "@/games/match3/match3Types";
+import {
+  activateSpecialTile,
+  applyMove,
+  createPlayableBoard,
+} from "@/games/match3/match3Logic";
+import type {
+  Match3Position,
+  Match3SpecialType,
+  Match3Tile,
+  TileKind,
+} from "@/games/match3/match3Types";
 import type { Difficulty, ResultPayload } from "@/shared/types/app";
 import type { GameSession } from "@/shared/types/session";
 
@@ -19,6 +28,12 @@ const tileLabels: Record<TileKind, string> = {
   star: "STAR",
 };
 
+const specialLabels: Record<Match3SpecialType, string> = {
+  rowClear: "ROW",
+  colClear: "COL",
+  bomb: "BOOM",
+};
+
 function isSamePosition(a: Match3Position | null, b: Match3Position): boolean {
   return Boolean(a && a.row === b.row && a.col === b.col);
 }
@@ -30,6 +45,7 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
   const [movesLeft, setMovesLeft] = useState(config.moveLimit);
   const [score, setScore] = useState(0);
   const [statusText, setStatusText] = useState("请选择一个方块，再点击相邻方块进行交换。");
+  const [clearingIds, setClearingIds] = useState<string[]>([]);
 
   useEffect(() => {
     setBoard(createPlayableBoard(config));
@@ -37,7 +53,22 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
     setMovesLeft(config.moveLimit);
     setScore(0);
     setStatusText("请选择一个方块，再点击相邻方块进行交换。");
+    setClearingIds([]);
   }, [config, session.runId]);
+
+  useEffect(() => {
+    if (clearingIds.length === 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setClearingIds([]);
+    }, 280);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [clearingIds]);
 
   useEffect(() => {
     if (score >= config.targetScore) {
@@ -69,6 +100,20 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
       return;
     }
 
+    const clickedTile = board[position.row][position.col];
+
+    if (!selected && clickedTile.special === "bomb") {
+      const moveResult = activateSpecialTile(board, position, config);
+      setClearingIds(moveResult.clearedIds);
+      window.setTimeout(() => {
+        setBoard(moveResult.board);
+        setMovesLeft((value) => value - 1);
+        setScore((value) => value + moveResult.clearedCount * 20);
+      }, 220);
+      setStatusText("已触发九宫格爆炸元素。");
+      return;
+    }
+
     if (!selected) {
       setSelected(position);
       setStatusText("已选中一个方块，请选择相邻方块完成交换。");
@@ -89,10 +134,24 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
       return;
     }
 
-    setBoard(moveResult.board);
+    setClearingIds(moveResult.clearedIds);
     setSelected(null);
-    setMovesLeft((value) => value - 1);
-    setScore((value) => value + moveResult.clearedCount * 20);
+    window.setTimeout(() => {
+      setBoard(moveResult.board);
+      setMovesLeft((value) => value - 1);
+      setScore((value) => value + moveResult.clearedCount * 20);
+    }, 220);
+
+    if (moveResult.generatedSpecialCount > 0) {
+      setStatusText(`成功生成了 ${moveResult.generatedSpecialCount} 个特殊元素。`);
+      return;
+    }
+
+    if (moveResult.activatedSpecialCount > 0) {
+      setStatusText(`触发了 ${moveResult.activatedSpecialCount} 个特殊元素。`);
+      return;
+    }
+
     setStatusText(`成功消除了 ${moveResult.clearedCount} 个方块。`);
   }
 
@@ -119,6 +178,9 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
             <li>三连消除</li>
             <li>掉落补位</li>
             <li>基础胜负判定</li>
+            <li>横向四连生成横向清除元素</li>
+            <li>纵向四连生成纵向清除元素</li>
+            <li>五连生成可点击九宫格爆炸元素</li>
           </ul>
         </article>
         <article className="mode-card">
@@ -128,6 +190,9 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
             <li>元素种类：{config.tileKinds.length} 种</li>
             <li>目标分数：{config.targetScore}</li>
             <li>步数限制：{config.moveLimit}</li>
+            <li>ROW：消除整行</li>
+            <li>COL：消除整列</li>
+            <li>BOOM：点击后爆炸清除九宫格</li>
           </ul>
         </article>
       </div>
@@ -135,6 +200,7 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
       <div className="match3-status-panel">
         <div className="status-strip">
           <span>{progressText}</span>
+          <span className="status-pill-strong">剩余步数 {movesLeft}</span>
           <span>
             棋盘 {config.rows} x {config.cols}
           </span>
@@ -152,16 +218,20 @@ export function Match3Mode({ session, difficulty, onFinish }: Match3ModeProps) {
         {board.flatMap((row, rowIndex) =>
           row.map((tile, colIndex) => {
             const active = isSamePosition(selected, { row: rowIndex, col: colIndex });
+            const clearing = clearingIds.includes(tile.id);
 
             return (
               <button
                 key={tile.id}
-                aria-label={`tile-${rowIndex}-${colIndex}-${tile.kind}`}
-                className={`match3-tile match3-${tile.kind}${active ? " match3-tile-active" : ""}`}
+                aria-label={`tile-${rowIndex}-${colIndex}-${tile.kind}${tile.special ? `-${tile.special}` : ""}`}
+                className={`match3-tile match3-${tile.kind}${tile.special ? " match3-special-tile" : ""}${active ? " match3-tile-active" : ""}${clearing ? " match3-tile-clearing" : ""}`}
                 onClick={() => handleTileClick({ row: rowIndex, col: colIndex })}
                 type="button"
               >
                 <span className="match3-tile-icon">{tileLabels[tile.kind]}</span>
+                {tile.special ? (
+                  <span className="match3-special-badge">{specialLabels[tile.special]}</span>
+                ) : null}
               </button>
             );
           }),

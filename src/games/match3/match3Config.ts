@@ -4,16 +4,16 @@ import type { Match3Config } from "@/games/match3/match3Types";
 export const match3EasyConfig: Match3Config = {
   rows: 6,
   cols: 6,
-  moveLimit: 18,
-  targetScore: 180,
+  moveLimit: 25,
+  targetScore: 3000,
   tileKinds: ["sun", "leaf", "drop", "berry"],
 };
 
 export const match3HardConfig: Match3Config = {
   rows: 7,
   cols: 7,
-  moveLimit: 14,
-  targetScore: 320,
+  moveLimit: 25,
+  targetScore: 4000,
   tileKinds: ["sun", "leaf", "drop", "berry", "star"],
 };
 

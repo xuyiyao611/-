@@ -1,4 +1,5 @@
 import { Match3ModeStub } from "@/games/match3/Match3ModeStub";
+import { SheepMode } from "@/games/sheep/SheepMode";
 import { SheepModeStub } from "@/games/sheep/SheepModeStub";
 import type { Difficulty, GameType, ResultPayload } from "@/shared/types/app";
 import type { GameSession } from "@/shared/types/session";
@@ -13,6 +14,10 @@ type GameHostProps = {
 export function GameHost({ session, gameType, difficulty, onFinish }: GameHostProps) {
   if (gameType === "match3") {
     return <Match3ModeStub session={session} difficulty={difficulty} onFinish={onFinish} />;
+  }
+
+  if (difficulty === "easy") {
+    return <SheepMode session={session} onFinish={onFinish} />;
   }
 
   return <SheepModeStub session={session} difficulty={difficulty} onFinish={onFinish} />;

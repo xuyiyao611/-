@@ -32,10 +32,10 @@ export function SheepModeStub({ session, difficulty, onFinish }: SheepModeStubPr
         <article className="mode-card">
           <h3>后续玩法接入点</h3>
           <ul className="mode-list">
-            <li>卡牌层级布局</li>
-            <li>遮挡判定</li>
-            <li>槽位入列</li>
-            <li>三张同牌消除</li>
+            <li>更深层级布局</li>
+            <li>更多干扰牌</li>
+            <li>更复杂容错设计</li>
+            <li>困难模式压迫感优化</li>
           </ul>
         </article>
       </div>
@@ -56,7 +56,7 @@ export function SheepModeStub({ session, difficulty, onFinish }: SheepModeStubPr
             onFinish({
               status: "win",
               title: "羊了个羊示例胜利",
-              description: "P2 阶段已完成玩法参数传递，下一步可直接接入卡牌层级与槽位逻辑。",
+              description: "当前困难模式仍为占位结构，P6 会接入真实高压卡牌逻辑。",
             })
           }
           type="button"
@@ -69,7 +69,7 @@ export function SheepModeStub({ session, difficulty, onFinish }: SheepModeStubPr
             onFinish({
               status: "lose",
               title: "羊了个羊示例失败",
-              description: "P2 阶段已验证结果流转，后续将替换为真实槽位失败判定。",
+              description: "当前困难模式仍为占位结构，P6 会替换为真实槽位失败判定。",
             })
           }
           type="button"
